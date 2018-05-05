@@ -1,0 +1,11 @@
+[options]
+-t = vcproj
+--vsnet-version = 2015
+--release = 
+--assume-shared-libs = 
+--with-apr = c:\Workspace\jal123\depends\apr-dist
+--with-apr-iconv = c:\Workspace\jal123\depends\apr-dist
+--with-apr-util = c:\Workspace\jal123\depends\apr-dist
+--with-zlib = c:\Workspace\jal123\depends\zlib
+--with-sqlite = c:\Workspace\jal123\depends\sqlite-amalgamation-3220000
+--with-openssl = c:\Workspace\jal123\depends\openssl

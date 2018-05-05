@@ -1,0 +1,4 @@
+make_dist: File not found: %(readme)s
+make_dist: Creating directory bin
+copy: .\..\..\Release\subversion/svn/svn.exe
+  to: C:\Workspace\jal123\depends\src\subversion-1.9.7\build\win32\svn-1.9.7d\svn\bin\svn.exe

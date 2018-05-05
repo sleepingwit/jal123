@@ -1,0 +1,14 @@
+advapi32.dll
+error: could not find libgettextlib-0-14-1.dll
+gdi32.dll
+kernel32.dll
+libiconv2.dll
+msvcp60.dll
+msvcrt.dll
+ntdll.dll
+ole32.dll
+rpcrt4.dll
+user32.dll
+ws2help.dll
+ws2_32.dll
+wsock32.dll

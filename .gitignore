@@ -1,0 +1,9 @@
+_ReSharper.Caches
+Debug
+Release
+TestResults
+*.user
+*.vs
+bin
+obj
+SvnBridgeTest

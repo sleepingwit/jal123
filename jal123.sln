@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SvnBridge", "SvnBridge\SvnBridge.csproj", "{AB347C28-D493-4CAB-8B7D-B96A17EB6C32}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SvnBridgeTest", "SvnBridgeTest\SvnBridgeTest.csproj", "{8ECFB72D-DB00-4EE8-985F-F144650F6B81}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BridgeCli", "BridgeCli\BridgeCli.vcxproj", "{5C900BBC-EAAA-477D-8342-6C577BEB7195}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "jal123", "jal123\jal123.csproj", "{4C7374C6-0FBD-4ADA-B455-05B6C8C80930}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB347C28-D493-4CAB-8B7D-B96A17EB6C32}.Debug|x64.ActiveCfg = Debug|x64
+		{AB347C28-D493-4CAB-8B7D-B96A17EB6C32}.Debug|x64.Build.0 = Debug|x64
+		{AB347C28-D493-4CAB-8B7D-B96A17EB6C32}.Release|x64.ActiveCfg = Release|x64
+		{AB347C28-D493-4CAB-8B7D-B96A17EB6C32}.Release|x64.Build.0 = Release|x64
+		{8ECFB72D-DB00-4EE8-985F-F144650F6B81}.Debug|x64.ActiveCfg = Debug|x64
+		{8ECFB72D-DB00-4EE8-985F-F144650F6B81}.Debug|x64.Build.0 = Debug|x64
+		{8ECFB72D-DB00-4EE8-985F-F144650F6B81}.Release|x64.ActiveCfg = Release|x64
+		{8ECFB72D-DB00-4EE8-985F-F144650F6B81}.Release|x64.Build.0 = Release|x64
+		{5C900BBC-EAAA-477D-8342-6C577BEB7195}.Debug|x64.ActiveCfg = Debug|x64
+		{5C900BBC-EAAA-477D-8342-6C577BEB7195}.Debug|x64.Build.0 = Debug|x64
+		{5C900BBC-EAAA-477D-8342-6C577BEB7195}.Release|x64.ActiveCfg = Release|x64
+		{5C900BBC-EAAA-477D-8342-6C577BEB7195}.Release|x64.Build.0 = Release|x64
+		{4C7374C6-0FBD-4ADA-B455-05B6C8C80930}.Debug|x64.ActiveCfg = Debug|x64
+		{4C7374C6-0FBD-4ADA-B455-05B6C8C80930}.Debug|x64.Build.0 = Debug|x64
+		{4C7374C6-0FBD-4ADA-B455-05B6C8C80930}.Release|x64.ActiveCfg = Release|x64
+		{4C7374C6-0FBD-4ADA-B455-05B6C8C80930}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D592D28-B1EE-480C-A7DB-B4654DDC3D93}
+	EndGlobalSection
+EndGlobal

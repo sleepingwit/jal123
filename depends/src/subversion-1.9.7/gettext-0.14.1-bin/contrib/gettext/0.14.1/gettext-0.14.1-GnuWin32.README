@@ -1,0 +1,59 @@
+* GetText-0.14.1 for Windows *
+==============================
+
+What is it?
+-----------
+GetText: library and tools for native language support
+
+Description
+-----------
+A well integrated set of tools and documentation to help programmers,
+translators, and users make other GNU packages produce multi-lingual
+messages. The tools include a set of conventions about how programs
+should be written to support message catalogs, a directory and file
+naming organzation for those message catalogs, a runtime library that
+supports retrieval of translated messages, and a few stand-alone
+programs to manipulate sets of strings. A special GNU Emacs mode also
+helps work with these strings.
+
+- LibIntl-1 is in Gettext-0.10-..
+- LibIntl-2 is in Libintl-0.11-..
+- LibIntl-3 is in Libintl-0.14-..
+	 
+Homepage
+--------
+http://www.gnu.org/software/gettext/gettext.html
+	 
+System
+------
+- MS-Windows 95 / 98 / ME / NT / 2000 / XP with msvcrt.dll
+- if msvcrt.dll is not in your Windows/System folder, get it from
+  Microsoft <http://support.microsoft.com/default.aspx?scid=kb;en-us;259403">
+  or by installing Internet Explorer 4.0 or higher
+  <http://www.microsoft.com/windows/ie> 
+- libiconv <http://gnuwin32.sourceforge.net/packages/libiconv.htm> 
+- libgw32c <http://gnuwin32.sourceforge.net/packages/libgw32c.htm> (for developing with GetText library)
+
+Notes
+-----
+- Bugs and questions on this MS-Windows port: gnuwin32@users.sourceforge.net
+
+Package Availability
+--------------------
+- in: http://gnuwin32.sourceforge.net
+
+Sources
+-------
+- gettext-0.14.1-src.zip
+
+Compilation
+-----------
+The package has been compiled with GNU auto-tools, GNU make, and Mingw
+(GCC for MS-Windows). Any differences from the original sources are given
+in gettext-0.14.1-GnuWin32.diffs in gettext-0.14.1-src.zip. Libraries needed
+for compilation can be found at the lines starting with 'LIBS = ' in the
+Makefiles. Usually, these are standard libraries provided with Mingw, or
+libraries from the package itself; 'gw32c' refers to the libgw32c package,
+which provides MS-Windows substitutes or stubs for functions normally found in
+Unix. For more information, see: http://gnuwin32.sourceforge.net/compile.html
+and http://gnuwin32.sourceforge.net/packages/libgw32c.htm.
