@@ -10,15 +10,6 @@ namespace Jal123.GUI
 {
     public partial class MainForm : Form
     {
-        private enum ExportSvnStep
-        {
-            Begin = 0,
-            CheckLog = 1,
-            FilterLog = 2,
-            ExportFile = 3,
-            Finish = 4
-        }
-
         private class ExportSvnUserState
         {
             public string LabelMessage;
@@ -31,10 +22,22 @@ namespace Jal123.GUI
             public string TargetDirectory;
         }
 
+        private enum ExportSvnStep
+        {
+            Begin = 0,
+            CheckLog = 1,
+            FilterLog = 2,
+            ExportFile = 3,
+            BuildDeleteScript = 4,
+            WriteExportLog = 5,
+            Finish = 6
+        }
+
         public MainForm()
         {
             _svnExportMutex = new object();
             _svnExportLog = new List<string>();
+            _svnDeleteLog = new List<string>();
             InitializeComponent();
         }
 
@@ -55,25 +58,13 @@ namespace Jal123.GUI
         private void ExportSvnCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             btnExport.Enabled = true;
-            lock (_svnExportMutex)
-            {
-                _svnExportLog.Sort();
-                FileStream fs = new FileStream(@"SvnExportLog.txt", FileMode.Create);
-                StreamWriter sw = new StreamWriter(fs, Encoding.UTF8);
-                foreach (string log in _svnExportLog)
-                {
-                    sw.Write(log);
-                }
-
-                sw.Close();
-            }
 
             MessageBox.Show("导出完成", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void ExportSvnProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            ExportSvnUserState us = e.UserState as ExportSvnUserState;
+            var us = e.UserState as ExportSvnUserState;
             if (us != null)
             {
                 pbExport.Value = e.ProgressPercentage + 1;
@@ -96,37 +87,37 @@ namespace Jal123.GUI
 
         private void btnExport_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrWhiteSpace(cbxSvnRepository.Text))
+            if (string.IsNullOrWhiteSpace(cbxSvnRepository.Text))
             {
                 errorProvider.SetError(cbxSvnRepository, "SVN 根路径不能为空");
                 return;
             }
 
-            if (String.IsNullOrWhiteSpace(txtTargetDirectory.Text))
+            if (string.IsNullOrWhiteSpace(txtTargetDirectory.Text))
             {
                 errorProvider.SetError(txtTargetDirectory, "导出目录不能为空");
                 return;
             }
 
-            if (String.IsNullOrWhiteSpace(txtNumbers.Text) || txtNumbers.Lines.Length == 0)
+            if (string.IsNullOrWhiteSpace(txtNumbers.Text) || txtNumbers.Lines.Length == 0)
             {
                 errorProvider.SetError(txtNumbers, "请输入要导出的内容");
             }
 
             errorProvider.Clear();
 
-            string svnRepository = cbxSvnRepository.Text.Trim();
-            string svnRepositoryResult = ValidateSvnRepostory(svnRepository);
-            if (!String.IsNullOrEmpty(svnRepositoryResult))
+            var svnRepository = cbxSvnRepository.Text.Trim();
+            var svnRepositoryResult = ValidateSvnRepostory(svnRepository);
+            if (!string.IsNullOrEmpty(svnRepositoryResult))
             {
                 MessageBox.Show(svnRepositoryResult, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            string targetDirectory = txtTargetDirectory.Text.Trim();
+            var targetDirectory = txtTargetDirectory.Text.Trim();
 
-            string targetResult = ValidateTargetDirectory(targetDirectory);
-            if (!String.IsNullOrEmpty(targetResult))
+            var targetResult = ValidateTargetDirectory(targetDirectory);
+            if (!string.IsNullOrEmpty(targetResult))
             {
                 MessageBox.Show(targetResult, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -135,20 +126,23 @@ namespace Jal123.GUI
             lock (_svnExportMutex)
             {
                 _svnExportLog.Clear();
+                _svnDeleteLog.Clear();
             }
 
             ExportSvnParameters parameters = null;
+
             // SVN Revision
             if (tbExportWay.SelectedTab == tabPageSvnRevision)
             {
-
                 parameters = ExportSvnDirectly(svnRepository, targetDirectory);
             }
+
             // 禅道Build
             else if (tbExportWay.SelectedTab == tabPageZentaoBuild)
             {
                 parameters = ExportZentaoBuild(svnRepository, targetDirectory);
             }
+
             // 禅道Bug
             else if (tbExportWay.SelectedTab == tabPageZentaoBug)
             {
@@ -168,20 +162,20 @@ namespace Jal123.GUI
 
         private ExportSvnParameters ExportZentaoStory(string svnRepository, string targetDirectory)
         {
-            List<int> stories = new List<int>();
+            var stories = new List<int>();
             foreach (var rawStory in txtZentaoStory.Lines)
             {
-                if (String.IsNullOrWhiteSpace(rawStory))
+                if (string.IsNullOrWhiteSpace(rawStory))
                 {
                     continue;
                 }
 
-                string[] rawStories = rawStory.Split(',');
-                foreach (string raw in rawStories)
+                var rawStories = rawStory.Split(',');
+                foreach (var raw in rawStories)
                 {
-                    if (!int.TryParse(raw.Trim(), out int story))
+                    if (!int.TryParse(raw.Trim(), out var story))
                     {
-                        MessageBox.Show(String.Format("{0} 不是有效的数字", rawStory.Trim()), "错误", MessageBoxButtons.OK);
+                        MessageBox.Show(string.Format("{0} 不是有效的数字", rawStory.Trim()), "错误", MessageBoxButtons.OK);
                         return null;
                     }
 
@@ -195,18 +189,20 @@ namespace Jal123.GUI
                 return null;
             }
 
-            ZentaoDbStoryRevisionExporter storyExporter = new ZentaoDbStoryRevisionExporter();
+            var storyExporter = new ZentaoDbStoryRevisionExporter();
             var storyNumbers = storyExporter.Export(stories);
 
-            HashSet<uint> filter = new HashSet<uint>();
-            foreach (uint rawBugNumber in storyNumbers)
+            var filter = new HashSet<uint>();
+            foreach (var rawBugNumber in storyNumbers)
             {
                 if (!filter.Contains(rawBugNumber))
+                {
                     filter.Add(rawBugNumber);
+                }
             }
 
-            Uri svnRoot = new Uri(svnRepository);
-            ExportSvnParameters parameters = new ExportSvnParameters
+            var svnRoot = new Uri(svnRepository);
+            var parameters = new ExportSvnParameters
             {
                 Numbers = new List<uint>(filter),
                 SvnRepository = svnRoot,
@@ -217,20 +213,20 @@ namespace Jal123.GUI
 
         private ExportSvnParameters ExportZentaoBug(string svnRepository, string targetDirectory)
         {
-            List<int> bugs = new List<int>();
+            var bugs = new List<int>();
             foreach (var rawBug in txtZentaoBug.Lines)
             {
-                if (String.IsNullOrWhiteSpace(rawBug))
+                if (string.IsNullOrWhiteSpace(rawBug))
                 {
                     continue;
                 }
 
-                string[] rawBugs = rawBug.Split(',');
-                foreach (string raw in rawBugs)
+                var rawBugs = rawBug.Split(',');
+                foreach (var raw in rawBugs)
                 {
-                    if (!int.TryParse(raw.Trim(), out int bug))
+                    if (!int.TryParse(raw.Trim(), out var bug))
                     {
-                        MessageBox.Show(String.Format("{0} 不是有效的数字", rawBug.Trim()), "错误", MessageBoxButtons.OK);
+                        MessageBox.Show(string.Format("{0} 不是有效的数字", rawBug.Trim()), "错误", MessageBoxButtons.OK);
                         return null;
                     }
 
@@ -244,18 +240,20 @@ namespace Jal123.GUI
                 return null;
             }
 
-            ZentaoDbBugRevisionExporter bugExporter = new ZentaoDbBugRevisionExporter();
+            var bugExporter = new ZentaoDbBugRevisionExporter();
             var bugNumbers = bugExporter.Export(bugs);
 
-            HashSet<uint> filter = new HashSet<uint>();
-            foreach (uint rawBugNumber in bugNumbers)
+            var filter = new HashSet<uint>();
+            foreach (var rawBugNumber in bugNumbers)
             {
                 if (!filter.Contains(rawBugNumber))
+                {
                     filter.Add(rawBugNumber);
+                }
             }
 
-            Uri svnRoot = new Uri(svnRepository);
-            ExportSvnParameters parameters = new ExportSvnParameters
+            var svnRoot = new Uri(svnRepository);
+            var parameters = new ExportSvnParameters
             {
                 Numbers = new List<uint>(filter),
                 SvnRepository = svnRoot,
@@ -266,29 +264,33 @@ namespace Jal123.GUI
 
         private ExportSvnParameters ExportZentaoBuild(string svnRepository, string targetDirectory)
         {
-            ZentaoBuildData data = cbxZentaoBuild.SelectedItem as ZentaoBuildData;
+            var data = cbxZentaoBuild.SelectedItem as ZentaoBuildData;
             if (data == null)
+            {
                 return null;
+            }
 
-            List<uint> rawNumbers = new List<uint>();
+            var rawNumbers = new List<uint>();
 
-            ZentaoDbStoryRevisionExporter storyExporter = new ZentaoDbStoryRevisionExporter();
+            var storyExporter = new ZentaoDbStoryRevisionExporter();
             var storyNumbers = storyExporter.Export(data.Stories);
             rawNumbers.AddRange(storyNumbers);
 
-            ZentaoDbBugRevisionExporter bugExporter = new ZentaoDbBugRevisionExporter();
+            var bugExporter = new ZentaoDbBugRevisionExporter();
             var bugNumbers = bugExporter.Export(data.Bugs);
             rawNumbers.AddRange(bugNumbers);
 
-            HashSet<uint> filter = new HashSet<uint>();
-            foreach (uint rawNumber in rawNumbers)
+            var filter = new HashSet<uint>();
+            foreach (var rawNumber in rawNumbers)
             {
                 if (!filter.Contains(rawNumber))
+                {
                     filter.Add(rawNumber);
+                }
             }
 
-            Uri svnRoot = new Uri(svnRepository);
-            ExportSvnParameters parameters = new ExportSvnParameters
+            var svnRoot = new Uri(svnRepository);
+            var parameters = new ExportSvnParameters
             {
                 Numbers = new List<uint>(filter),
                 SvnRepository = svnRoot,
@@ -299,20 +301,20 @@ namespace Jal123.GUI
 
         private ExportSvnParameters ExportSvnDirectly(string svnRepository, string targetDirectory)
         {
-            List<uint> numbers = new List<uint>();
-            foreach (string rawNumber in txtNumbers.Lines)
+            var numbers = new List<uint>();
+            foreach (var rawNumber in txtNumbers.Lines)
             {
-                if (String.IsNullOrWhiteSpace(rawNumber))
+                if (string.IsNullOrWhiteSpace(rawNumber))
                 {
                     continue;
                 }
 
-                string[] rawNumbers = rawNumber.Split(',');
-                foreach (string raw in rawNumbers)
+                var rawNumbers = rawNumber.Split(',');
+                foreach (var raw in rawNumbers)
                 {
-                    if (!uint.TryParse(raw.Trim(), out uint number))
+                    if (!uint.TryParse(raw.Trim(), out var number))
                     {
-                        MessageBox.Show(String.Format("{0} 不是有效的数字", rawNumber.Trim()), "错误", MessageBoxButtons.OK);
+                        MessageBox.Show(string.Format("{0} 不是有效的数字", rawNumber.Trim()), "错误", MessageBoxButtons.OK);
                         return null;
                     }
 
@@ -326,9 +328,9 @@ namespace Jal123.GUI
                 return null;
             }
 
-            Uri svnRoot = new Uri(svnRepository);
+            var svnRoot = new Uri(svnRepository);
 
-            ExportSvnParameters parameters = new ExportSvnParameters
+            var parameters = new ExportSvnParameters
             {
                 Numbers = numbers,
                 SvnRepository = svnRoot,
@@ -339,32 +341,40 @@ namespace Jal123.GUI
 
         private void StartExportSvn(object sender, DoWorkEventArgs e)
         {
-            ExportSvnUserState userState = new ExportSvnUserState();
+            var userState = new ExportSvnUserState();
             userState.LabelMessage = "检索SVN日志";
 
-            ExportSvnParameters parameters = e.Argument as ExportSvnParameters;
+            var parameters = e.Argument as ExportSvnParameters;
 
-            BackgroundWorker bg = sender as BackgroundWorker;
-            bg.ReportProgress((int)ExportSvnStep.Begin, userState);
+            var bg = sender as BackgroundWorker;
+            bg.ReportProgress((int) ExportSvnStep.Begin, userState);
 
             try
             {
-                LogCmdResult logs = SvnRevisionsExportor.GetSvnLog(parameters.SvnRepository, parameters.Numbers);
-                bg.ReportProgress((int)ExportSvnStep.CheckLog, userState);
+                var logs = SvnRevisionsExportor.GetSvnLog(parameters.SvnRepository, parameters.Numbers);
+                bg.ReportProgress((int) ExportSvnStep.CheckLog, userState);
 
                 userState.LabelMessage = "重建日志文件索引";
-                Dictionary<string, uint> files = SvnRevisionsExportor.RebuildFileUrls(logs);
-                bg.ReportProgress((int)ExportSvnStep.FilterLog, userState);
+                var files = SvnRevisionsExportor.RebuildFileUrls(logs);
+                bg.ReportProgress((int) ExportSvnStep.FilterLog, userState);
 
                 userState.LabelMessage = "执行导出";
                 SvnRevisionsExportor.SvnFileExported += OnSvnFileExported;
                 SvnRevisionsExportor.Export(parameters.TargetDirectory, parameters.SvnRepository, files);
                 SvnRevisionsExportor.SvnFileExported -= OnSvnFileExported;
-                bg.ReportProgress((int)ExportSvnStep.ExportFile, userState);
+                bg.ReportProgress((int) ExportSvnStep.ExportFile, userState);
+
+                userState.LabelMessage = "生成删除脚本";
+                MakeDeleteScript(parameters.TargetDirectory);
+                bg.ReportProgress((int) ExportSvnStep.BuildDeleteScript, userState);
+
+                userState.LabelMessage = "生成导出日志";
+                WriteExportLog(parameters.TargetDirectory);
+                bg.ReportProgress((int) ExportSvnStep.WriteExportLog, userState);
             }
             catch (Exception exception)
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
                 sb.AppendLine(exception.Message);
                 sb.Append(exception.StackTrace);
                 MessageBox.Show(sb.ToString(), "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -372,33 +382,77 @@ namespace Jal123.GUI
             }
 
             userState.LabelMessage = "导出完成";
-            bg.ReportProgress((int)ExportSvnStep.Finish, userState);
+            bg.ReportProgress((int) ExportSvnStep.Finish, userState);
         }
 
         private void OnSvnFileExported(object sender, SvnFileExportedEventArgs e)
         {
             lock (_svnExportMutex)
             {
-                _svnExportLog.Add(String.Format("{0}@{1}\r\n", e.SvnFile, e.Revision));
+                _svnExportLog.Add(string.Format("{0}\t{1}@{2}\r\n", e.Action, e.SvnFile, e.Revision));
+                if (e.Action == LogCmdResultItem.ItemAction.Delete)
+                {
+                    _svnDeleteLog.Add(e.SvnFile);
+                }
+            }
+        }
+
+        private void MakeDeleteScript(string targetDirectory)
+        {
+            lock (_svnExportMutex)
+            {
+                var path = Path.Combine(targetDirectory, @"Delete.bat");
+                var fs = new FileStream(path, FileMode.Create);
+                var sw = new StreamWriter(fs, Encoding.ASCII);
+                sw.WriteLine("@echo off");
+                foreach (var log in _svnDeleteLog)
+                {
+                    sw.WriteLine("echo del /F /Q \"{0}\"",
+                        log.TrimStart('/').Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar));
+                    sw.WriteLine("del /F /Q \"{0}\"",
+                        log.TrimStart('/').Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar));
+                }
+
+                sw.WriteLine("@echo on");
+                sw.WriteLine("pause");
+
+                sw.Close();
+            }
+        }
+
+        private void WriteExportLog(string targetDirectory)
+        {
+            lock (_svnExportMutex)
+            {
+                _svnExportLog.Sort();
+                var path = Path.Combine(targetDirectory, @"ExportLog.txt");
+                var fs = new FileStream(path, FileMode.Create);
+                var sw = new StreamWriter(fs, Encoding.UTF8);
+                foreach (var log in _svnExportLog)
+                {
+                    sw.Write(log);
+                }
+
+                sw.Close();
             }
         }
 
         private string ValidateSvnRepostory(string url)
         {
-            if (String.IsNullOrWhiteSpace(url))
+            if (string.IsNullOrWhiteSpace(url))
             {
                 return "SVN根目录不能为空";
             }
 
             try
             {
-                Match match = Regex.Match(url, @"^SVN\://", RegexOptions.IgnoreCase);
+                var match = Regex.Match(url, @"^SVN\://", RegexOptions.IgnoreCase);
                 if (match.Length <= 0)
                 {
                     return "SVN根目录应当以svn://开头";
                 }
 
-                Uri uri = new Uri(url);
+                var uri = new Uri(url);
                 if (!uri.IsWellFormedOriginalString())
                 {
                     return "SVN根目录不是有效的URI格式";
@@ -415,20 +469,20 @@ namespace Jal123.GUI
         // 这是一个很简单的本地目录路径验正方法
         private string ValidateTargetDirectory(string path)
         {
-            if (String.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
                 return "导出目录的路径不能为空";
             }
 
             try
             {
-                Match match = Regex.Match(path, @"^[A-Za-z]\:\\");
+                var match = Regex.Match(path, @"^[A-Za-z]\:\\");
                 if (match.Length <= 0)
                 {
                     return "导出目录的路径不能是相对路径";
                 }
 
-                string fullPath = Path.GetFullPath(path);
+                var fullPath = Path.GetFullPath(path);
                 if (!Directory.Exists(fullPath))
                 {
                     return "导出目录不存在";
@@ -450,10 +504,10 @@ namespace Jal123.GUI
 
         private void btnRequestZentaoProduct_Click(object sender, EventArgs e)
         {
-            ZentaoDbProductsExporter exporter = new ZentaoDbProductsExporter();
+            var exporter = new ZentaoDbProductsExporter();
             var results = exporter.Export();
             cbxZentaoProduct.Items.Clear();
-            foreach (ZentaoProductData zentaoProductData in results)
+            foreach (var zentaoProductData in results)
             {
                 cbxZentaoProduct.Items.Add(zentaoProductData);
             }
@@ -464,17 +518,15 @@ namespace Jal123.GUI
             }
         }
 
-        private void tbExportWay_Selected(object sender, TabControlEventArgs e) { }
-
         private void cbxZentaoProduct_SelectedIndexChanged(object sender, EventArgs e)
         {
             cbxZentaoProject.Items.Clear();
 
             if (cbxZentaoProduct.SelectedItem != null)
             {
-                ZentaoDbProjectsExporter exporter = new ZentaoDbProjectsExporter();
+                var exporter = new ZentaoDbProjectsExporter();
                 var results = exporter.Export(cbxZentaoProduct.SelectedItem as ZentaoProductData);
-                foreach (ZentaoProjectData zentaoProjectData in results)
+                foreach (var zentaoProjectData in results)
                 {
                     cbxZentaoProject.Items.Add(zentaoProjectData);
                 }
@@ -491,9 +543,10 @@ namespace Jal123.GUI
             cbxZentaoBuild.Items.Clear();
             if (cbxZentaoProject.SelectedItem != null)
             {
-                ZentaoDbBuildsExporter exporter = new ZentaoDbBuildsExporter();
+                var exporter = new ZentaoDbBuildsExporter();
                 var results = exporter.Export(cbxZentaoProject.SelectedItem as ZentaoProjectData);
-                foreach (ZentaoBuildData zentaoBuildData in results)
+
+                foreach (var zentaoBuildData in results)
                 {
                     cbxZentaoBuild.Items.Add(zentaoBuildData);
                 }
@@ -506,6 +559,7 @@ namespace Jal123.GUI
         }
 
         private readonly List<string> _svnExportLog;
+        private readonly List<string> _svnDeleteLog;
 
         private readonly object _svnExportMutex;
     }

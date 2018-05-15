@@ -153,7 +153,6 @@
             resources.ApplyResources(this.tbExportWay, "tbExportWay");
             this.tbExportWay.Name = "tbExportWay";
             this.tbExportWay.SelectedIndex = 0;
-            this.tbExportWay.Selected += new System.Windows.Forms.TabControlEventHandler(this.tbExportWay_Selected);
             // 
             // tabPageSvnRevision
             // 
